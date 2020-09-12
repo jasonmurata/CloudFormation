@@ -1,3 +1,12 @@
+Parameters:
+    pInstanceType:
+        Description: Select EC2 Instance Type
+        Type: String
+        Default: t2.micro
+        AllowedValues: 
+            - t2.nano
+            - t2.micro
+            - t2.small
 Mappings:
     mRegionMap:
         us-west-2:
@@ -12,4 +21,5 @@ Resources:
         - mRegionMap
         - !Ref 'AWS::Region'
         - AMI
-      InstanceType: t2.micro
+      InstanceType:
+        !Ref pInstanceType
