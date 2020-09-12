@@ -1,4 +1,7 @@
 Parameters:
+    pKeyName:
+        Description: Select Key Pair
+        Type: 'AWS::EC2::KeyPair::KeyName'
     pInstanceType:
         Description: Select EC2 Instance Type
         Type: String
@@ -21,5 +24,18 @@ Resources:
         - mRegionMap
         - !Ref 'AWS::Region'
         - AMI
+      KeyName: !Ref pKeyName
       InstanceType:
         !Ref pInstanceType
+      SecurityGroups:
+        - !Ref rSecurityGroup
+  rSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: CF Enable SSH
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 205.251.233.0/24
+      
