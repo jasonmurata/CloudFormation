@@ -2,7 +2,7 @@ Resources:
   NewVolume:
     Type: AWS::EC2::Volume
     Properties: 
-      Size: 23
+      Size: 15
       VolumeType: gp2
       AvailabilityZone: !Select
         - 0
