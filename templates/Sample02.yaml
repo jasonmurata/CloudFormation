@@ -1,6 +1,15 @@
+Mappings:
+    mRegionMap:
+        us-west-2:
+            AMI: ami-0841edc20334f9287
+        us-east-2:
+            AMI: ami-0603cbe34fd08cb81
 Resources:
   rWebServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-0841edc20334f9287
+      ImageId: !FindInMap
+        - mRegionMap
+        - !Ref 'AWS::Region'
+        - AMI
       InstanceType: t2.micro
