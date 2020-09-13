@@ -72,6 +72,54 @@ Resources:
             - '         --region '
             - !Ref 'AWS::Region'
             - |+
+
+  rWebServerScaleUpPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref rWebServerASG
+      Cooldown: '30'
+      ScalingAdjustment: '1'
+  rWebServerScaleDownPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref rWebServerASG
+      Cooldown: '30'
+      ScalingAdjustment: '-1'
+  rCPUAlarmHigh:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: Scale-up if CPU > 90% for 1 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: '60'
+      EvaluationPeriods: '2'
+      Threshold: '90'
+      AlarmActions:
+        - !Ref rWebServerScaleUpPolicy
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref rWebServerASG
+      ComparisonOperator: GreaterThanThreshold
+  rCPUAlarmLow:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: Scale-down if CPU < 60% for 1 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: '60'
+      EvaluationPeriods: '2'
+      Threshold: '60'
+      AlarmActions:
+        - !Ref rWebServerScaleDownPolicy
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref rWebServerASG
+      ComparisonOperator: LessThanThreshold
+
   rWebServerELB:
       Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
       Properties: 
