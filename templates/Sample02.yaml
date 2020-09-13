@@ -29,6 +29,15 @@ Resources:
         !Ref pInstanceType
       SecurityGroups:
         - !Ref rSecurityGroup
+      UserData: !Base64 
+        'Fn::Join':
+          - |+
+
+          - - '#!/bin/bash -xe'
+            - sudo yum update -y
+            - sudo yum install httpd -y
+            - sudo /etc/init.d/httpd start
+            - echo "<html><body><h1>AWSome </h1></body></html>" > /var/www/html/index.html
   rSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -38,4 +47,23 @@ Resources:
           FromPort: '22'
           ToPort: '22'
           CidrIp: 205.251.233.0/24
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 205.251.233.0/24
+Outputs:
+  URL:
+    Description: URL of Website
+    Value: !Join
+      - ''
+      - - 'http://'
+        - !GetAtt
+          - rWebServer
+          - PublicDnsName
+  PublicIP:
+    Description: Server Public IP
+    Value:
+      !GetAtt
+        - rWebServer
+        - PublicIp
       
