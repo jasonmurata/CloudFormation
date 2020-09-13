@@ -19,6 +19,23 @@ Mappings:
 Resources:
   rWebServer:
     Type: AWS::EC2::Instance
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            /var/www/html/index.html:
+              content: <html><body><h1>AWSome 2.0</h1></body></html>
+              mode: '000644'
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              httpd:
+                enabled: 'true'
+                ensureRunning: 'true'
     Properties:
       ImageId: !FindInMap
         - mRegionMap
@@ -31,17 +48,24 @@ Resources:
         - !Ref rSecurityGroup
       UserData: !Base64 
         'Fn::Join':
-          - |+
-
-          - - '#!/bin/bash -xe'
-            - sudo yum update -y
-            - sudo yum install httpd -y
-            - sudo /etc/init.d/httpd start
-            - echo "<html><body><h1>AWSome </h1></body></html>" > /var/www/html/index.html
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              yum update -y aws-cfn-bootstrap
+              # Python helper script to process metadata configs
+            - '/opt/aws/bin/cfn-init -v '
+            - '         --stack '
+            - !Ref 'AWS::StackName'
+            - '         --resource rWebServer '
+            - '         --region '
+            - !Ref 'AWS::Region'
+            - |+
+            
   rSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: CF Enable SSH
+      GroupDescription: CF Enable SSH and HTTP
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '22'
