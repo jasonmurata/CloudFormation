@@ -17,8 +17,19 @@ Mappings:
         us-east-2:
             AMI: ami-0603cbe34fd08cb81
 Resources:
-  rWebServer:
-    Type: AWS::EC2::Instance
+  rWebServerASG:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      AvailabilityZones: !GetAZs ''
+      LaunchConfigurationName: !Ref rLaunchConfig
+      MinSize: '1'
+      MaxSize: '3'
+      LoadBalancerNames:
+        - !Ref rWebServerELB
+  rLaunchConfig:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+# rWebServer:
+#   Type: AWS::EC2::Instance
     Metadata:
       'AWS::CloudFormation::Init':
         config:
@@ -57,11 +68,25 @@ Resources:
             - '/opt/aws/bin/cfn-init -v '
             - '         --stack '
             - !Ref 'AWS::StackName'
-            - '         --resource rWebServer '
+            - '         --resource rLaunchConfig '
             - '         --region '
             - !Ref 'AWS::Region'
             - |+
-            
+  rWebServerELB:
+      Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
+      Properties: 
+        AvailabilityZones: !GetAZs ''
+        CrossZone: 'true'
+        Listeners:
+          - LoadBalancerPort: '80'
+            InstancePort: '80'
+            Protocol: HTTP
+        HealthCheck:
+          Target: 'HTTP:80/'
+          HealthyThreshold: '3'
+          UnhealthyThreshold: '5'
+          Interval: '30'
+          Timeout: '5'
   rSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -74,20 +99,22 @@ Resources:
         - IpProtocol: tcp
           FromPort: '80'
           ToPort: '80'
-          CidrIp: 205.251.233.0/24
-Outputs:
-  URL:
-    Description: URL of Website
-    Value: !Join
-      - ''
-      - - 'http://'
-        - !GetAtt
-          - rWebServer
-          - PublicDnsName
-  PublicIP:
-    Description: Server Public IP
-    Value:
-      !GetAtt
-        - rWebServer
-        - PublicIp
+          CidrIp: 0.0.0.0/0
+#Outputs:
+#  URL:
+#    Description: URL of Website
+#    Value: !Join
+#      - ''
+#      - - 'http://'
+#        - !GetAtt
+#          - rWebServer
+#          - rLaunchConfig
+#          - PublicDnsName
+#  PublicIP:
+#    Description: Server Public IP
+#    Value:
+#      !GetAtt
+#        #- rWebServer
+#        - rLaunchConfig
+#        - PublicIp
       
