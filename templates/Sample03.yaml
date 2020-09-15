@@ -1,0 +1,31 @@
+Parameters:
+  pEnvironmentName:
+    Description:
+    Type: String
+  
+  pVpcCIDR:
+    Description: IP range for this VPC
+    Type: String
+    Default: 10.50.0.0/16
+
+  pPublicSubnet1CIDR:
+    Description: IP range for the public subnet in the first AZ
+    Type: String
+    Default: 10.50.10.0/24
+
+  pPublicSubnet2CIDR:
+    Description: IP range for the public subnet in the second AZ
+    Type: String
+    Default: 10.50.11.0/24
+
+  pPrivateSubnet1CIDR:
+    Description: IP range for the private subnet in the first AZ
+    Type: String
+    Default: 10.50.20.0/24
+
+  pPrivateSubnet2CIDR:
+    Description: IP range for the private subnet in the second AZ
+    Type: String
+    Default: 10.50.21.0/24
+
+Resources:
