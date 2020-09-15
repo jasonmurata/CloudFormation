@@ -1,22 +1,37 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  AWS CloudFormation template.  Features include: Sample website running on linux, loadbalanced, autoscaling group
 Parameters:
-    pKeyName:
-        Description: Select Key Pair
-        Type: 'AWS::EC2::KeyPair::KeyName'
-    pInstanceType:
-        Description: Select EC2 Instance Type
-        Type: String
-        Default: t2.micro
-        AllowedValues: 
-            - t2.nano
-            - t2.micro
-            - t2.small
+  pKeyName:
+    Description: Select Key Pair
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  pInstanceType:
+    Description: Select EC2 Instance Type
+    Type: String
+    Default: t2.micro
+    AllowedValues: 
+      - t2.nano
+      - t2.micro
+      - t2.small
+  pOperatorEMail:
+    Description: email address to notify of scaling operations
+    Type: String
+    AllowedPattern: >-
+      ([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)
+    ConstraintDescription: must be a valid email address.
 Mappings:
-    mRegionMap:
-        us-west-2:
-            AMI: ami-0841edc20334f9287
-        us-east-2:
-            AMI: ami-0603cbe34fd08cb81
+  mRegionMap:
+    us-west-2:
+      AMI: ami-0841edc20334f9287
+    us-east-2:
+      AMI: ami-0603cbe34fd08cb81
 Resources:
+  rNotificationTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      Subscription:
+        - Endpoint: !Ref pOperatorEMail
+          Protocol: email
   rWebServerASG:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
@@ -26,6 +41,13 @@ Resources:
       MaxSize: '3'
       LoadBalancerNames:
         - !Ref rWebServerELB
+      NotificationConfiguration:
+        TopicARN: !Ref rNotificationTopic
+        NotificationTypes:
+          - 'autoscaling:EC2_INSTANCE_LAUNCH'
+          - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+          - 'autoscaling:EC2_INSTANCE_TERMINATE'
+          - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
   rLaunchConfig:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
 # rWebServer:
@@ -148,16 +170,15 @@ Resources:
           FromPort: '80'
           ToPort: '80'
           CidrIp: 0.0.0.0/0
-#Outputs:
-#  URL:
-#    Description: URL of Website
-#    Value: !Join
-#      - ''
-#      - - 'http://'
-#        - !GetAtt
-#          - rWebServer
-#          - rLaunchConfig
-#          - PublicDnsName
+Outputs:
+  URL:
+    Description: The URL of the website
+    Value: !Join 
+      - ''
+      - - 'http://'
+        - !GetAtt 
+          - rWebServerELB
+          - DNSName
 #  PublicIP:
 #    Description: Server Public IP
 #    Value:
