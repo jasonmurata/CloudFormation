@@ -1,6 +1,31 @@
+Description: >
+  AWS CloudFormation template.  VPC, 2 private & 2 public subnets... WIP
+Metadata:
+# Change the default order of the parameters
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "VPC"
+        Parameters:
+          - pEnvironmentName
+          - pVpcCIDR
+      -
+        Label:
+          default: "Public"
+        Parameters:
+          - pPublicSubnet1CIDR
+          - pPublicSubnet2CIDR
+      -
+        Label:
+          default: "Private"
+        Parameters:
+          - pPrivateSubnet1CIDR
+          - pPrivateSubnet2CIDR
+        
 Parameters:
   pEnvironmentName:
-    Description:
+    Description: Sample03
     Type: String
   
   pVpcCIDR:
@@ -29,3 +54,68 @@ Parameters:
     Default: 10.50.21.0/24
 
 Resources:
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc.html
+  rVPC: 
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref pVpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref pEnvironmentName  
+  rInternetGW:
+    Type: AWS::EC2::InternetGateway    
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref pEnvironmentName 
+  rInternetGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref rInternetGW
+      VpcId: !Ref rVPC 
+  rPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref rVPC
+      # Select function, list of AZs, 0 index
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref pPublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name 
+          Value: !Sub ${pEnvironmentName} Public Subnet (AZ1)
+  rPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref rVPC
+      # Select function, list of AZs, 1 index
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Ref pPublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name 
+          Value: !Sub ${pEnvironmentName} Public Subnet (AZ2)
+  rPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref rVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref pPrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name 
+          Value: !Sub ${pEnvironmentName} Private Subnet (AZ1)
+  rPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref rVPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Ref pPrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name 
+          Value: !Sub ${pEnvironmentName} Private Subnet (AZ2)
+
+
