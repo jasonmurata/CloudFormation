@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Sample template to create an Windows Server and add Features
+
+Parameters:
+  pKeyName:
+    Description: Select Key Pair
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  pInstanceType:
+    Description: Select EC2 Instance Type
+    Type: String
+    Default: t2.micro
+    AllowedValues: 
+      - t2.nano
+      - t2.micro
+      - t2.small
+  pRDPSourceCidr:
+    Description: Source CIDR you will RDP from...
+    Type: String
+    MinLength: "9"
+    MaxLength: "18"
+    AllowedPattern: ^([0-9]+\.){3}[0-9]+\/[0-9]+$
+Mappings:
+  mRegionMap:
+    us-west-2:
+      AMI: ami-0afb7a78e89642197
+    us-east-2:
+      AMI: ami-0ca69a9d06da3835d
+Resources:
+  rW2019:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap
+        - mRegionMap
+        - !Ref 'AWS::Region'
+        - AMI
+      InstanceType:
+        !Ref pInstanceType
+      SecurityGroups:
+        - !Ref rSecurityGroup
+      KeyName:
+        !Ref pKeyName
+  rSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: RDP
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '3389'
+          ToPort: '3389'
+#          CidrIp: 205.251.233.0/24
+          CidrIp: 
+            Ref: pRDPSourceCidr
+
