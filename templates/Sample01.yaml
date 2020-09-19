@@ -4,6 +4,7 @@ Description: >
 Parameters:
   pSize:
     Description: Size in GB of EBS
+    Default: 5
     Type: String
 Resources:
 # Resource Name.  Prefixed with 'r'  

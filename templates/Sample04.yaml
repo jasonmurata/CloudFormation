@@ -1,0 +1,14 @@
+Description: >
+  Sample template to use a nested stack with Parameters
+Parameters:
+  pSize:
+    Description: Nested Size
+    Type: String
+Resources:
+  rStack01:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://cf-templates-1ovuf5ib6qznn-us-west-2.s3-us-west-2.amazonaws.com/Sample01.yaml
+      Parameters: 
+        pSize: !Ref 'pSize'
+        
