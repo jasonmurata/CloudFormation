@@ -1,5 +1,6 @@
 Description: >
-  AWS CloudFormation template.  VPC, 2 private & 2 public subnets... WIP
+  AWS CloudFormation template.  VPC, 2 private & 2 public subnets
+  1 IGW, 2 NAT GW (1 in each Public Subnet), 3 Route Tables, SG (No Ingress)
 Metadata:
 # Change the default order of the parameters
   AWS::CloudFormation::Interface:
@@ -117,5 +118,102 @@ Resources:
       Tags:
         - Key: Name 
           Value: !Sub ${pEnvironmentName} Private Subnet (AZ2)
+# NAT Gateways & Elastic IPs
+  rNatGW1:
+    Type: AWS::EC2::NatGateway
+    Properties: 
+      AllocationId: !GetAtt rNatGW1EIP.AllocationId
+      SubnetId: !Ref rPublicSubnet1
+  rNatGW1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: rInternetGWAttachment
+    Properties:
+      Domain: rVPC
+  rNatGW2:
+    Type: AWS::EC2::NatGateway
+    Properties: 
+      AllocationId: !GetAtt rNatGW2EIP.AllocationId
+      SubnetId: !Ref rPublicSubnet2
+  rNatGW2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: rInternetGWAttachment
+    Properties:
+      Domain: rVPC
+  # Public Route Table 1, 1 Def Route, 2 associated public subnets
+  rPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref rVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${pEnvironmentName} Public Routes
+  rDefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: rInternetGWAttachment
+    Properties:
+      RouteTableId: !Ref rPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref rInternetGW
+  rPublicSubnet1RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref rPublicRouteTable
+      SubnetId: !Ref rPublicSubnet1
+  rPublicSubnet2RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref rPublicRouteTable
+      SubnetId: !Ref rPublicSubnet2
+  # Private Route Table 1, 1 Def Route, 1 associated public subnets
+  rPrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref rVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${pEnvironmentName} Private Routes (AZ1)
+  rDefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref rPrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref rNatGW1
+  rPrivateSubnet1RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref rPrivateRouteTable1
+      SubnetId: !Ref rPrivateSubnet1
+  # Private Route Table 2, 1 Def Route, 1 associated public subnets
+  rPrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref rVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${pEnvironmentName} Private Routes (AZ2)
+  rDefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref rPrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref rNatGW2
+  rPrivateSubnet2RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref rPrivateRouteTable2
+      SubnetId: !Ref rPrivateSubnet2
+  # Empty SG, default set to No Ingress
+  rSecurityGroupNoIngress:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "No Ingress"
+      GroupDescription: "Security group, Default NO ingress rule"
+      VpcId: !Ref rVPC
 
-
+Outputs:
+  oPublicSubnets:
+    Description: Public Subnets
+    Value: !Join [ ",", [ !Ref rPublicSubnet1, !Ref rPublicSubnet2 ]]
+  oPrivateSubnets:
+    Description: Private Subnets
+    Value: !Join [ ",", [ !Ref rPrivateSubnet1, !Ref rPrivateSubnet2 ]]
