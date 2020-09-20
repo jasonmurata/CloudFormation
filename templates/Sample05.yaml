@@ -1,7 +1,27 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
   Sample template to create an Windows Server and add Features
-
+Metadata:
+# Change the default order of the parameters
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Instance"
+        Parameters:
+          - pKeyName
+          - pInstanceType
+      -
+        Label:
+          default: "Network"
+        Parameters:
+          - pRDPSourceCidr
+      -
+        Label:
+          default: "Roles & Features"
+        Parameters:
+          - pRoles
+          - pFeatures
 Parameters:
   pKeyName:
     Description: Select Key Pair
@@ -21,23 +41,19 @@ Parameters:
     MinLength: "9"
     MaxLength: "18"
     AllowedPattern: ^([0-9]+\.){3}[0-9]+\/[0-9]+$
-#  pRoles:
-#    Description: Select a role to install
-#    Type: String
-#    Default: None
-    # AllowedPattern:
-#    AllowedValues:
-#      - DNS
-#      - DHCP
-#      - None
-#  pFeatures:
-#    Description: Select a feature to install
-#    Type: String
-#    Default: None
-#    AllowedValues:
-#      - Telnet-Client
-#      - Backup-Features
-#      - None
+  pRoles:
+    Description: Enter a Role or Roles, COMMA delimited.  Example - DNS,DHCP
+    Type: String
+    Default: None
+    #AllowedPattern: need to create
+  pFeatures:
+    Description: Select a feature to install.  Just testing dropdown box, this can be changed to allow multiple features.
+    Type: String
+    Default: None
+    AllowedValues:
+      - Telnet-Client
+      - Backup-Features
+      - None
 Mappings:
   mRegionMap:
     us-west-2:
@@ -107,8 +123,19 @@ Resources:
                     - Ref: AWS::Region
                     - "\n"
           commands:
-            1-install-something:
-              command: PowerShell.exe -Command "Install-WindowsFeature Telnet-Client"
+            1-install-roles:
+              command:
+                Fn::Join:
+                  - ""
+                  - - PowerShell.exe -Command "Install-WindowsFeature " 
+                    - Ref: pRoles
+            2-install-features:
+              command:
+                Fn::Join:
+                  - ""
+                  - - PowerShell.exe -Command "Install-WindowsFeature " 
+                    - Ref: pFeatures
+              #command: PowerShell.exe -Command "Install-WindowsFeature Telnet-Client"
               #command: PowerShell.exe -Command "echo "hello" > c:\hello.txt"
           services:
             windows:
