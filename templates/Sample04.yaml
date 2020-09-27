@@ -8,9 +8,10 @@ Resources:
   rStack01:
     Type: AWS::CloudFormation::Stack
     Properties:
-      # path style, needs to be changed to virtual hosted
-      # ex: https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/something/templates/Sample01.yaml
-      TemplateURL: https://cf-templates-1ovuf5ib6qznn-us-west-2.s3-us-west-2.amazonaws.com/Sample01.yaml
+      # path style and virtual hosted S3 links
+      #TemplateURL: https://cf-templates-1ovuf5ib6qznn-us-west-2.s3-us-west-2.amazonaws.com/Sample01.yaml
+      #TemplateURL: https://s3.us-west-2.amazonaws.com/cf-templates-1ovuf5ib6qznn-us-west-2/Sample01.yaml
+      TemplateURL: https://cf-templates-1ovuf5ib6qznn-us-west-2.s3.us-west-2.amazonaws.com/Sample01.yaml
       Parameters: 
         pSize: !Ref 'pSize'
         
