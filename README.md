@@ -12,3 +12,5 @@ Sample template nesting Sample01 and passing parameters.
 # Sample05.yaml
 Sample template for Windows server, ability to choose installed Roles & Features... WIP, need to complete 'AllowedPattern'
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-windows-stacks-bootstrapping.html
+# Sample06.yaml
+Sample template for Remote Desktop Gateway.  Nesting VPC template... WIP

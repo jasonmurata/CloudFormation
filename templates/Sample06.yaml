@@ -1,2 +1,61 @@
 Description: >
   Sample template to create RDG
+Metadata:
+# Change the default order of the parameters
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "VPC"
+        Parameters:
+          - pEnvironmentName
+          - pVpcCIDR
+      -
+        Label:
+          default: "Public"
+        Parameters:
+          - pPublicSubnet1CIDR
+          - pPublicSubnet2CIDR
+      -
+        Label:
+          default: "Private"
+        Parameters:
+          - pPrivateSubnet1CIDR
+          - pPrivateSubnet2CIDR
+        
+Parameters:
+  pEnvironmentName:
+    Description: Sample03
+    Type: String
+  pVpcCIDR:
+    Description: IP range for this VPC
+    Type: String
+    Default: 10.50.0.0/16
+  pPublicSubnet1CIDR:
+    Description: IP range for the public subnet in the first AZ
+    Type: String
+    Default: 10.50.10.0/24
+  pPublicSubnet2CIDR:
+    Description: IP range for the public subnet in the second AZ
+    Type: String
+    Default: 10.50.11.0/24
+  pPrivateSubnet1CIDR:
+    Description: IP range for the private subnet in the first AZ
+    Type: String
+    Default: 10.50.20.0/24
+  pPrivateSubnet2CIDR:
+    Description: IP range for the private subnet in the second AZ
+    Type: String
+    Default: 10.50.21.0/24
+Resources:
+  rVPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://0testep2727.s3.us-west-2.amazonaws.com/Sample03.yaml
+      Parameters:
+        pEnvironmentName: !Ref 'pEnvironmentName'
+        pVpcCIDR: !Ref 'pVpcCIDR'
+        pPublicSubnet1CIDR: !Ref 'pPublicSubnet1CIDR'
+        pPublicSubnet2CIDR: !Ref 'pPublicSubnet2CIDR'
+        pPrivateSubnet1CIDR: !Ref 'pPrivateSubnet1CIDR'
+        pPrivateSubnet2CIDR: !Ref 'pPrivateSubnet2CIDR'
