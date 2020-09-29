@@ -16,6 +16,8 @@ Metadata:
           default: "Network"
         Parameters:
           - pRDPSourceCidr
+          - pPublicSubnet1ID
+          - pVPCId
       -
         Label:
           default: "Roles & Features"
@@ -41,6 +43,13 @@ Parameters:
     MinLength: "9"
     MaxLength: "18"
     AllowedPattern: ^([0-9]+\.){3}[0-9]+\/[0-9]+$
+  pPublicSubnet1ID:
+    Description: ID of public subnet where you want this EC2 to reside
+    Type: AWS::EC2::Subnet::Id
+  # Added to accomodate EC2-VPC vs EC2-Classic
+  pVPCId:
+    Description: ID of the VPC
+    Type: AWS::EC2::VPC::Id
   pRoles:
     Description: Enter a Role or Roles, COMMA delimited.  Example - DNS,DHCP
     Type: String
@@ -70,10 +79,13 @@ Resources:
         - AMI
       InstanceType:
         !Ref pInstanceType
-      SecurityGroups:
+       # Modified to accomodate EC2-VPC vs EC2-Classic
+      SecurityGroupIds:
         - !Ref rSecurityGroup
       KeyName:
         !Ref pKeyName
+      SubnetId: 
+        !Ref pPublicSubnet1ID
       UserData:
         Fn::Base64:
           Fn::Join:
@@ -157,4 +169,6 @@ Resources:
 #          CidrIp: 205.251.233.0/24
           CidrIp: 
             Ref: pRDPSourceCidr
+       # Added to accomodate EC2-VPC vs EC2-Classic
+      VpcId: !Ref 'pVPCId'
 
