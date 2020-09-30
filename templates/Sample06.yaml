@@ -10,18 +10,21 @@ Metadata:
         Parameters:
           - pEnvironmentName
           - pVpcCIDR
-      -
-        Label:
-          default: "Public"
-        Parameters:
           - pPublicSubnet1CIDR
           - pPublicSubnet2CIDR
-      -
-        Label:
-          default: "Private"
-        Parameters:
           - pPrivateSubnet1CIDR
           - pPrivateSubnet2CIDR
+      -
+        Label:
+          default: "EC2"
+        Parameters:
+          - pKeyName
+          - pInstanceType
+          - pRDPSourceCidr
+          - pPublicSubnet1ID
+          - pVPCId
+          - pRoles
+          - pFeatures
         
 Parameters:
   pEnvironmentName:
@@ -47,6 +50,45 @@ Parameters:
     Description: IP range for the private subnet in the second AZ
     Type: String
     Default: 10.50.21.0/24
+# EC2 Instance Parameters
+  pKeyName:
+    Description: Select Key Pair
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  pInstanceType:
+    Description: Select EC2 Instance Type
+    Type: String
+    Default: t2.micro
+    AllowedValues: 
+      - t2.nano
+      - t2.micro
+      - t2.small
+  pRDPSourceCidr:
+    Description: Source CIDR you will RDP from...
+    Type: String
+    Default: 205.251.233.0/24
+    MinLength: "9"
+    MaxLength: "18"
+    AllowedPattern: ^([0-9]+\.){3}[0-9]+\/[0-9]+$
+##  pPublicSubnet1ID:
+##    Description: ID of public subnet where you want this EC2 to reside
+##    Type: AWS::EC2::Subnet::Id
+  # Added to accomodate EC2-VPC vs EC2-Classic
+##  pVPCId:
+##    Description: ID of the VPC
+##    Type: AWS::EC2::VPC::Id
+  pRoles:
+    Description: Enter a Role or Roles, COMMA delimited.  Example - DNS,DHCP
+    Type: String
+    Default: None
+    #AllowedPattern: need to create
+  pFeatures:
+    Description: Select a feature to install.  Just testing dropdown box, this can be changed to allow multiple features.
+    Type: String
+    Default: None
+    AllowedValues:
+      - Telnet-Client
+      - Backup-Features
+      - None
 Resources:
   rVPCStack:
     Type: AWS::CloudFormation::Stack
@@ -59,3 +101,16 @@ Resources:
         pPublicSubnet2CIDR: !Ref 'pPublicSubnet2CIDR'
         pPrivateSubnet1CIDR: !Ref 'pPrivateSubnet1CIDR'
         pPrivateSubnet2CIDR: !Ref 'pPrivateSubnet2CIDR'
+  rW2019Stack:
+    DependsOn: rVPCStack
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://0testep2727.s3.us-west-2.amazonaws.com/Sample05.yaml
+      Parameters:
+        pKeyName: !Ref 'pKeyName'
+        pInstanceType: !Ref 'pInstanceType'
+        pRDPSourceCidr: !Ref 'pRDPSourceCidr'
+        pPublicSubnet1ID: !GetAtt 'rVPCStack.Outputs.oPublicSubnet1'
+        pVPCId: !GetAtt 'rVPCStack.Outputs.oVPCID'
+        pRoles: !Ref 'pRoles'
+        pFeatures: !Ref 'pFeatures'
