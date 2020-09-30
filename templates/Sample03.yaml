@@ -217,3 +217,14 @@ Outputs:
   oPrivateSubnets:
     Description: Private Subnets
     Value: !Join [ ",", [ !Ref rPrivateSubnet1, !Ref rPrivateSubnet2 ]]
+  # Outputs to export to another nested stack
+  oVPCID:
+    Value: !Ref rVPC
+    Description: VPC ID
+    Export:
+      Name: !Sub ${AWS::StackName}-VPCID
+  oPublicSubnet1:
+    Value: !Ref rPublicSubnet1
+    Description: Public Subnet1 ID
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicSubnet1ID
