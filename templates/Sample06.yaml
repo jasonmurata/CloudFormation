@@ -1,5 +1,6 @@
 Description: >
-  Sample template to create RDG
+  Sample template to create VPC with 2 public and 2 private subnets with nested stack Sample03.  
+  Then create w2019 server with Sample05 using Outputs from Sample03.
 Metadata:
 # Change the default order of the parameters
   AWS::CloudFormation::Interface:
