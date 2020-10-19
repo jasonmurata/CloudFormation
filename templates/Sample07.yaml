@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Sample template to create an Windows Server and store admin password in AWS Secrets Manager, rather than sharing the Private Key to retreive PW.
+Parameters:
+  pKeyName:
+    Description: Select Key Pair
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  pInstanceType:
+    Description: Select EC2 Instance Type
+    Type: String
+    Default: t2.micro
+    AllowedValues: 
+      - t2.nano
+      - t2.micro
+      - t2.small
+  pVPCId:
+    Description: ID of the VPC
+    Type: AWS::EC2::VPC::Id
+  pRDPSourceCidr:
+    Description: Source CIDR you will RDP from...
+    Type: String
+    Default: 205.251.233.0/24
+    MinLength: "9"
+    MaxLength: "18"
+    AllowedPattern: ^([0-9]+\.){3}[0-9]+\/[0-9]+$
+Mappings:
+  mRegionMap:
+    us-west-2:
+      AMI: ami-0afb7a78e89642197
+    us-east-2:
+      AMI: ami-0ca69a9d06da3835d
+Resources:
+  rLocalAdminPassword:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString:
+        SecretStringTemplate: '{ "Username": "Administrator" }'
+        GenerateStringKey: Password
+        PasswordLength: 30
+        ExcludeCharacters: "\"@'$`"
+  rInstanceRole:
+    Type: AWS::IAM::Role
+#Creation of IAM resources requires --capabilities CAPABILITY_IAM or in Console, last checkbox before "Create Stack" 
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Action: sts:AssumeRole
+          Principal:
+            Service: ec2.amazonaws.com
+      Policies:
+        - PolicyName: SecretsManager
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - secretsmanager:*SecretValue
+                  - secretsmanager:UpdateSecretVersionStage
+                  - secretsmanager:DescribeSecret
+                Effect: Allow
+                Resource:
+                  Ref: rLocalAdminPassword
+              - Action: secretsmanager:GetRandomPassword
+                Effect: Allow
+                Resource: "*"
+  rInstanceProfile:
+  # The container for an IAM Role.  Used to pass IAM role to EC2 Instance.
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: rInstanceRole
+    DependsOn: rInstanceRole
+  rW2019:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap
+        - mRegionMap
+        - !Ref 'AWS::Region'
+        - AMI
+      InstanceType:
+        !Ref pInstanceType
+      IamInstanceProfile:
+        Ref: rInstanceProfile
+      SecurityGroupIds:
+        - !Ref rSecurityGroup
+      KeyName:
+        !Ref pKeyName
+      UserData:
+# This will change Aministrator password; Private key will not work anymore to decrypt pw...
+        Fn::Base64:
+          Fn::Join:
+            - "\n"
+            - - <powershell>
+              - Import-Module AWSPowerShell
+              - Fn::Join:
+                  - ""
+                  - - $password = ((Get-SECSecretValue -SecretId '
+                    - Ref: rLocalAdminPassword
+                    - "').SecretString | ConvertFrom-Json).Password"
+              - net.exe user Administrator $password
+              - </powershell>
+      Tags:
+        - Key: LocalAdminSecretARN
+          Value:
+            Ref: rLocalAdminPassword
+  rSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: RDP
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '3389'
+          ToPort: '3389'
+#          CidrIp: 205.251.233.0/24
+          CidrIp: 
+            Ref: pRDPSourceCidr
+      VpcId: !Ref 'pVPCId'
