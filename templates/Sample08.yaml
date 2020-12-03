@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Sample template for Database Migration Service (DMS)
+Parameters:
+  pReplicationInstanceClass:
+    Description: Select Instance Class
+    Type: String
+    Default: dms.t2.small
+    AllowedValues:
+      - dms.t2.micro
+      - dms.t2.small
+      - dms.t2.medium
+
+Resources:
+# Resource Name.  Prefixed with 'r'  
+  rReplicationInstance:
+# Attribute 'Type'
+    Type: AWS::DMS::ReplicationInstance
+# Attribute 'Properties'    
+    Properties: 
+# Subproperties:
+      ReplicationInstanceClass: !Ref pReplicationInstanceClass
+      ReplicationInstanceIdentifier: !Sub '${AWS::StackName} RI'
+
+
+#Mappings:
+#Outputs:
