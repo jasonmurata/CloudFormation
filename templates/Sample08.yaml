@@ -15,8 +15,16 @@ Metadata:
         Label:
           default: "Endpoints"
         Parameters:
-          - pEPSourceDbEngine
-          - pEPTargetDbEngine
+          - pEPSrcDbEngine
+          - pSrcServerName
+          - pSrcDbUsername
+          - pSrcDbPassword
+          - pEPTgtDbEngine
+          - pTgtServerName
+          - pTgtDbUsername
+          - pTgtDbPassword
+          - pMigrationType
+          - pDbSchemaName
 
 Parameters:
   pReplicationInstanceClass:
@@ -31,44 +39,115 @@ Parameters:
     Description: The amount of storage (in GB) to be allocated.
     Type: Number
     Default: 50
-  pEPSourceDbEngine:
+  pEPSrcDbEngine:
     Description: Source DB Engine.
     Type: String
     Default: mysql
-    AllowedValues: [mysql, oracle, postgres, mariadb, aurora, sqlserver]
-  pEPTargetDbEngine:
+    AllowedValues: [mysql, oracle, postgres, mariadb, aurora, sqlserver]  
+  pSrcServerName:  
+    Description: Source DB Server Name
+    Type: String
+    Default: 172.31.8.171
+  pSrcDbUsername:
+    Description: Source DB Username
+    Type: String
+    Default: dbuser01
+  pSrcDbPassword:
+    Description: Source DB Password
+    Type: String
+
+  pEPTgtDbEngine:
     Description: Target DB Engine.
     Type: String
     Default: mysql
     AllowedValues: [mysql, oracle, postgres, mariadb, aurora, sqlserver]
+  pTgtServerName:  
+    Description: Target DB Server Name
+    Type: String
+    Default: rdstarget2.cpbuhj9avkjl.us-west-2.rds.amazonaws.com
+  pTgtDbUsername:
+    Description: Target DB Username
+    Type: String
+    Default: xxadmin
+  pTgtDbPassword:
+    Description: Target DB Password
+    Type: String
+  pMigrationType:
+    Description: The migration type.
+    Type: String
+    Default: full-load
+    AllowedValues: [full-load, cdc, full-load-and-cdc]
+  pDbSchemaName:
+    Description: DB Schema Name
+    Type: String
+    Default: wordpressdbsource
+
+
 Resources:
-# Resource Name.  Prefixed with 'r' 
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/AWS_DMS.html
+
+# Replication Instance
+# Resource Name.  Prefixed with 'r' 
   rReplicationInstance:
-# Attribute 'Type'
+## Attribute 'Type'
     Type: AWS::DMS::ReplicationInstance
-# Attribute 'Properties'    
+## Attribute 'Properties'    
     Properties: 
-# Subproperties:
+## Subproperties:
       AllocatedStorage: !Ref pReplicationInstanceStorage
       MultiAZ: false
       PubliclyAccessible: false
       ReplicationInstanceClass: !Ref pReplicationInstanceClass
       ReplicationInstanceIdentifier: !Sub '${AWS::StackName}-RI'
- 
+# Endpoint Source
   rDMSEndpointSource:
     Type: AWS::DMS::Endpoint
     Properties: 
       EndpointIdentifier: !Sub '${AWS::StackName}-SourceEP'
       EndpointType: 'source'
-      EngineName: !Ref pEPSourceDbEngine
+      Port: 3306
+      EngineName: !Ref pEPSrcDbEngine
+      ServerName: !Ref pSrcServerName
+      Username: !Ref pSrcDbUsername
+      Password: !Ref pSrcDbPassword
 
   rDMSEndpointTarget:
     Type: AWS::DMS::Endpoint
     Properties: 
       EndpointIdentifier: !Sub '${AWS::StackName}-TargetEP'
       EndpointType: 'target'
-      EngineName: !Ref pEPTargetDbEngine
-
+      Port: 3306
+      EngineName: !Ref pEPTgtDbEngine
+      ServerName: !Ref pTgtServerName
+      Username: !Ref pTgtDbUsername
+      Password: !Ref pTgtDbPassword
+# Replication Task
+  rDMSReplicationTask:
+    Type: AWS::DMS::ReplicationTask
+    Properties:
+      ReplicationTaskIdentifier: !Sub '${AWS::StackName}-dms-replication-task'
+      MigrationType: !Ref pMigrationType
+      ReplicationInstanceArn: !Ref rReplicationInstance
+      SourceEndpointArn: !Ref rDMSEndpointSource
+      TargetEndpointArn: !Ref rDMSEndpointTarget
+      TableMappings:
+        !Sub
+          - |-
+            {
+              "rules": [
+                {
+                  "rule-type": "selection",
+                  "rule-id": "1",
+                  "rule-action": "include",
+                  "object-locator": {
+                    "schema-name": "${db_schema_name}",                          
+                    "table-name": "%"
+                  },
+                  "rule-name": "1"
+                }
+              ]
+            }                        
+          -
+            db_schema_name: !Ref pDbSchemaName
 #Mappings:
 #Outputs:
