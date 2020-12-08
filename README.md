@@ -17,4 +17,5 @@ Sample template for nesting Sample03 & Sample05.  Sample05 will use VPC Outputs 
 # Sample07.yaml 
 Sample template for creating Windows EC2 and changing admin user to use a password stored in Secrets Manager.
 # Sample08.yaml
-Sample template for creating DMS Components (Replication Instance, Endpoints, Tasks)
+Sample template for creating DMS Components (Replication Instance, Endpoints, Tasks) 
+#
