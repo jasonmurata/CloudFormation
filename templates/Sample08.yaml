@@ -11,6 +11,7 @@ Metadata:
         Parameters:
           - pReplicationInstanceClass
           - pReplicationInstanceStorage
+          - pAvailabilityZone
       -
         Label:
           default: "Endpoints"
@@ -18,11 +19,11 @@ Metadata:
           - pEPSrcDbEngine
           - pSrcServerName
           - pSrcDbUsername
-          - pSrcDbPassword
+          #- pSrcDbPassword
           - pEPTgtDbEngine
           - pTgtServerName
-          - pTgtDbUsername
-          - pTgtDbPassword
+          #- pTgtDbUsername
+          #- pTgtDbPassword
           - pMigrationType
           - pDbSchemaName
 
@@ -39,6 +40,11 @@ Parameters:
     Description: The amount of storage (in GB) to be allocated.
     Type: Number
     Default: 50
+  pAvailabilityZone:
+    Description: AZ of the Replication Instance
+    Type: String
+    Default: us-west-2c
+
   pEPSrcDbEngine:
     Description: Source DB Engine.
     Type: String
@@ -52,9 +58,9 @@ Parameters:
     Description: Source DB Username
     Type: String
     Default: dbuser01
-  pSrcDbPassword:
-    Description: Source DB Password
-    Type: String
+  #pSrcDbPassword:
+    #Description: Source DB Password
+    #Type: String
 
   pEPTgtDbEngine:
     Description: Target DB Engine.
@@ -65,13 +71,13 @@ Parameters:
     Description: Target DB Server Name
     Type: String
     Default: rdstarget2.cpbuhj9avkjl.us-west-2.rds.amazonaws.com
-  pTgtDbUsername:
-    Description: Target DB Username
-    Type: String
-    Default: xxadmin
-  pTgtDbPassword:
-    Description: Target DB Password
-    Type: String
+  #pTgtDbUsername:
+    #Description: Target DB Username
+    #Type: String
+    #Default: username
+  #pTgtDbPassword:
+    #Description: Target DB Password
+    #Type: String
   pMigrationType:
     Description: The migration type.
     Type: String
@@ -99,6 +105,7 @@ Resources:
       PubliclyAccessible: false
       ReplicationInstanceClass: !Ref pReplicationInstanceClass
       ReplicationInstanceIdentifier: !Sub '${AWS::StackName}-RI'
+      AvailabilityZone: !Ref pAvailabilityZone
 # Endpoint Source
   rDMSEndpointSource:
     Type: AWS::DMS::Endpoint
@@ -109,7 +116,8 @@ Resources:
       EngineName: !Ref pEPSrcDbEngine
       ServerName: !Ref pSrcServerName
       Username: !Ref pSrcDbUsername
-      Password: !Ref pSrcDbPassword
+      #Password: !Ref pSrcDbPassword
+      Password: '{{resolve:secretsmanager:SourceSM:SecretString:password}}' 
 
   rDMSEndpointTarget:
     Type: AWS::DMS::Endpoint
@@ -119,8 +127,8 @@ Resources:
       Port: 3306
       EngineName: !Ref pEPTgtDbEngine
       ServerName: !Ref pTgtServerName
-      Username: !Ref pTgtDbUsername
-      Password: !Ref pTgtDbPassword
+      Username: '{{resolve:secretsmanager:TargetSM:SecretString:username}}'
+      Password: '{{resolve:secretsmanager:TargetSM:SecretString:password}}'
 # Replication Task
   rDMSReplicationTask:
     Type: AWS::DMS::ReplicationTask
