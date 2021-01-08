@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
   Sample template for Database Migration Service (DMS)
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/AWS_DMS.html
 Metadata:
 # Change the default order of the parameters
   AWS::CloudFormation::Interface:
@@ -14,16 +15,24 @@ Metadata:
           - pAvailabilityZone
       -
         Label:
-          default: "Endpoints"
+          default: "Source Endpoints"
         Parameters:
           - pEPSrcDbEngine
           - pSrcServerName
-          - pSrcDbUsername
+          #- pSrcDbUsername
           #- pSrcDbPassword
+      -
+        Label:
+          default: "Target Endpoints"
+        Parameters:
           - pEPTgtDbEngine
           - pTgtServerName
           #- pTgtDbUsername
           #- pTgtDbPassword
+      -
+        Label:
+          default: "Replication Task"
+        Parameters:
           - pMigrationType
           - pDbSchemaName
 
@@ -43,7 +52,7 @@ Parameters:
   pAvailabilityZone:
     Description: AZ of the Replication Instance
     Type: String
-    Default: us-west-2c
+    Default: us-west-1b
 
   pEPSrcDbEngine:
     Description: Source DB Engine.
@@ -53,11 +62,11 @@ Parameters:
   pSrcServerName:  
     Description: Source DB Server Name
     Type: String
-    Default: 172.31.8.171
-  pSrcDbUsername:
-    Description: Source DB Username
-    Type: String
-    Default: dbuser01
+    Default: 172.31.28.3
+  #pSrcDbUsername:
+    #Description: Source DB Username
+    #Type: String
+    #Default: wpdbadmin
   #pSrcDbPassword:
     #Description: Source DB Password
     #Type: String
@@ -70,11 +79,11 @@ Parameters:
   pTgtServerName:  
     Description: Target DB Server Name
     Type: String
-    Default: rdstarget2.cpbuhj9avkjl.us-west-2.rds.amazonaws.com
+    Default: ab3targetdb.cmgtl5fnvnpm.us-west-1.rds.amazonaws.com
   #pTgtDbUsername:
     #Description: Target DB Username
     #Type: String
-    #Default: username
+    #Default: xxadmin
   #pTgtDbPassword:
     #Description: Target DB Password
     #Type: String
@@ -86,20 +95,13 @@ Parameters:
   pDbSchemaName:
     Description: DB Schema Name
     Type: String
-    Default: wordpressdbsource
-
+    Default: wordpressdb
 
 Resources:
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/AWS_DMS.html
-
 # Replication Instance
-# Resource Name.  Prefixed with 'r' 
   rReplicationInstance:
-## Attribute 'Type'
-    Type: AWS::DMS::ReplicationInstance
-## Attribute 'Properties'    
+    Type: AWS::DMS::ReplicationInstance  
     Properties: 
-## Subproperties:
       AllocatedStorage: !Ref pReplicationInstanceStorage
       MultiAZ: false
       PubliclyAccessible: false
@@ -115,8 +117,9 @@ Resources:
       Port: 3306
       EngineName: !Ref pEPSrcDbEngine
       ServerName: !Ref pSrcServerName
-      Username: !Ref pSrcDbUsername
+      #Username: !Ref pSrcDbUsername
       #Password: !Ref pSrcDbPassword
+      Username: '{{resolve:secretsmanager:SourceSM:SecretString:username}}' 
       Password: '{{resolve:secretsmanager:SourceSM:SecretString:password}}' 
 
   rDMSEndpointTarget:
@@ -156,6 +159,17 @@ Resources:
               ]
             }                        
           -
-            db_schema_name: !Ref pDbSchemaName
+            db_schema_name: !Ref pDbSchemaName      
+      ReplicationTaskSettings:
+        !Sub
+          - |-
+            {
+              "FullLoadSettings": {
+                "TargetTablePrepMode": "TRUNCATE_BEFORE_LOAD",
+              }
+            }   
+          -
+            enable_logging: true
+                             
 #Mappings:
 #Outputs:
